@@ -1,0 +1,31 @@
+.snakeGame:focus {
+  outline: none
+}
+
+.tile {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid rgb(232, 232, 232);
+    margin: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+}
+
+.noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Safari */
+       -khtml-user-select: none; /* Konqueror HTML */
+         -moz-user-select: none; /* Old versions of Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently
+                                    supported by Chrome, Edge, Opera and Firefox */
+  }
+
+.snakeGameGrid {
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid black;
+    margin: 0.5rem;
+}

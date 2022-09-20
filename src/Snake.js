@@ -1,42 +1,114 @@
 import './Snake.css';
 import { useState, useEffect } from "react";
-import { generateGrid, checkNewPosition, getRandomPosition } from "./utils.js"
+import { generateGrid, checkNewPosition, getRandomPosition, compareCoordinates } from "./utils.js";
 
 export default function Snake() {
-  const [filledTiles, setFilledTiles] = useState([]);
-  const [allTiles, setAllTiles] = useState([]);
   const [gridDimensions, setGridDimensions] = useState([10,10]);
-  const [gameState, setGameState] = useState("initial");
-  const [inputVector, setInputVector] = useState([1,0]);
+  const [tiles, setTiles] = useState(generateGrid(gridDimensions));
   const [headPosition, setHeadPosition] = useState([5,5]);
-  const [fruitPosition, setFruitPosition] = useState([]);
+  const [currentVector, setCurrentVector] = useState([1,0]);
+  const [bodyPosition, setBodyPosition] = useState([[5,5]]);
+  const [foodPosition, setFoodPosition] = useState([]);
+  const [gameStatus, setGameStatus] = useState("initial");
 
-  useEffect(() => {
-    setAllTiles(generateGrid(gridDimensions))
-  }, [gridDimensions]);
-
-  const fillTile = (inputCoords) => {
-    console.log(`fillTile(${inputCoords})`);
-    setFilledTiles((prev) => [...prev, inputCoords]);
+  const changeContents = (targetCoordinate, newContent) => {
+    console.log(`changeContents(${targetCoordinate}, ${newContent})`);
+    console.log(tiles)
+    const tilePosition = tiles.findIndex(({coordinate}) => compareCoordinates(coordinate, targetCoordinate) );
+    console.log(tilePosition);
+    let newTiles = tiles;
+    newTiles[tilePosition].contents = newContent;
+    setTiles(newTiles);
   }
 
-  const moveSnake = (hasEaten) => {
-    if(gameState !== "running") return;
-    const newHeadPosition = [headPosition[0] + inputVector[0], headPosition[1] + inputVector[1]];
-    if(checkNewPosition(newHeadPosition, gridDimensions, filledTiles) ) {
-      setGameState("gameOver");
+  const changeVector = ({key}) => {
+    if(!/[awds]/.test(key)) return;
+    switch (key) {
+      case "w":
+        setCurrentVector([0,1]);
+        break;
+      case "a":
+        setCurrentVector([-1,0]);
+        break;
+      case "s":
+        setCurrentVector([0,-1]);
+        break;
+      case "d":
+        setCurrentVector([1,0]);
+        break;
+      default:
+        break;
+    }
+    moveSnake();
+  }
+
+  const moveSnake = () => {
+    console.log(`moveSnake()`);
+    const newPosition = [headPosition[0] + currentVector[0], headPosition[1] + currentVector[1]];
+    if(!checkNewPosition(newPosition, gridDimensions, bodyPosition)){
+      setGameStatus("gameOver");
     } else {
-      setHeadPosition(newHeadPosition);
-      fillTile(newHeadPosition);
-      if(!hasEaten) setFilledTiles((prev) => prev.slice(1));
-      setFruitPosition(getRandomPosition(gridDimensions, filledTiles));
+      setHeadPosition(newPosition, gridDimensions, bodyPosition);
+      changeContents(newPosition, "filled");
+      setBodyPosition((prev) => [...prev, newPosition]);
+      if(!compareCoordinates(newPosition, foodPosition)){
+        changeContents(bodyPosition[0], "empty");
+        setBodyPosition((prev) => prev.slice(1));
+      } else {
+        setFoodPosition(getRandomPosition(gridDimensions, bodyPosition));
+      }
     }
   }
 
+  const changeGridDimensions = (newDimensions) => {
+    setGridDimensions(newDimensions);
+  }
+
+  const startGame = () => {
+    setTiles(generateGrid(gridDimensions));
+    setHeadPosition([5,5]);
+    changeContents([5,5], "filled");
+    setBodyPosition([]);
+    setCurrentVector([1,0]);
+    setGameStatus("running");
+  }
+
+  useEffect(() => {
+    if(gameStatus !== "running") return;
+    const gameInterval = setInterval(() => {
+      moveSnake()
+    }, 300);
+    return clearInterval(gameInterval)
+  },[gameStatus])
+
   return (
-    <div className="snakeGame">
-
-
+    <div className="snakeGame" tabIndex={0} onKeyDown={changeVector}>
+      <button onClick={startGame}>Start</button>
+      <div className="snakeGameGrid"
+        onKeyDown={changeVector}        
+        style={{width: (`calc( calc( 2rem + 2px ) * ${gridDimensions[0]} )`)}}>
+          {tiles.map((tile) => {
+            let tileColor; 
+            switch (tiles.contents) {
+              case "empty":
+                tileColor = "white";
+                break;
+              case "filled":
+                tileColor = "grey";
+                break;
+              case "fruit":
+                tileColor = "blue";
+                break;
+              default:
+                break;
+            }
+            return <p 
+              className="tile noselect"
+              key={tile.coordinate}
+              style={{backgroundColor: tileColor}}
+              ></p>
+          })}
+      </div>
     </div>
   );
 }
